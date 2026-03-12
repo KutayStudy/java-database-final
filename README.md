@@ -91,23 +91,36 @@ Controller
 ├── ProductController
 ├── InventoryController
 ├── ReviewController
+├── GlobalExceptionHandler
 
 Service
 ├── OrderService
 ├── ServiceClass
 
 Repo
-├── ProductRepository
-├── InventoryRepository
-├── ReviewRepository
+ ├── ProductRepository
+ ├── InventoryRepository
+ ├── ReviewRepository
+ ├── CustomerRepository
+ ├── OrderDetailsRepository
+ ├── OrderItemRepository
+ ├── StoreRepository
 
 Model
+
+Entities
+├── Store
 ├── Product
 ├── Inventory
+├── Customer
 ├── OrderDetails
 ├── OrderItem
-├── Customer
-├── DTO classes
+├── Review
+
+DTOs
+├── PlaceOrderRequestDTO
+├── PurchaseProductDTO
+├── CombinedRequestDTO
 
 config
 ├── WebConfig
