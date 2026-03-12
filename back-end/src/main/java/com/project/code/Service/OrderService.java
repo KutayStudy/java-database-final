@@ -1,7 +1,19 @@
 package com.project.code.Service;
 
-import com.project.code.Model.*;
-import com.project.code.Repository.*;
+import com.project.code.Model.Customer;
+import com.project.code.Model.Inventory;
+import com.project.code.Model.OrderDetails;
+import com.project.code.Model.OrderItem;
+import com.project.code.Model.PlaceOrderRequestDTO;
+import com.project.code.Model.Product;
+import com.project.code.Model.PurchaseProductDTO;
+import com.project.code.Model.Store;
+import com.project.code.Repo.CustomerRepository;
+import com.project.code.Repo.InventoryRepository;
+import com.project.code.Repo.OrderDetailsRepository;
+import com.project.code.Repo.OrderItemRepository;
+import com.project.code.Repo.ProductRepository;
+import com.project.code.Repo.StoreRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,47 +25,55 @@ public class OrderService {
 
     @Autowired
     private ProductRepository productRepository;
+
     @Autowired
     private InventoryRepository inventoryRepository;
+
     @Autowired
     private CustomerRepository customerRepository;
+
     @Autowired
     private StoreRepository storeRepository;
+
     @Autowired
     private OrderDetailsRepository orderDetailsRepository;
+
     @Autowired
     private OrderItemRepository orderItemRepository;
 
     @Transactional
-    public void saveOrder(PlaceOrderRequestDTO placeOrderRequest){
+    public void placeOrder(PlaceOrderRequestDTO placeOrderRequest) {
         Customer customer = customerRepository.findByEmail(placeOrderRequest.getCustomerEmail());
 
-        if(customer == null){
+        if (customer == null) {
             customer = new Customer();
             customer.setName(placeOrderRequest.getCustomerName());
             customer.setEmail(placeOrderRequest.getCustomerEmail());
             customer = customerRepository.save(customer);
         }
 
-        Store store = storeRepository.findById(placeOrderRequest.getStoreId()).orElseThrow(() -> new RuntimeException("Store not found with id: " + placeOrderRequest.getStoreId()));
+        Store store = storeRepository.findById(placeOrderRequest.getStoreId())
+                .orElseThrow(() -> new RuntimeException(
+                        "Store not found with id: " + placeOrderRequest.getStoreId()));
 
         OrderDetails orderDetails = new OrderDetails();
         orderDetails.setCustomer(customer);
         orderDetails.setStore(store);
         orderDetails.setTotalPrice(placeOrderRequest.getTotalPrice());
-        orderDetails.setOrderDate(LocalDateTime.now());
+        orderDetails.setDate(LocalDateTime.now());
 
         orderDetails = orderDetailsRepository.save(orderDetails);
 
+        for (PurchaseProductDTO purchasedProduct : placeOrderRequest.getPurchaseProduct()) {
 
-        for (PurchasedProductDTO purchasedProduct : placeOrderRequest.getProducts()) {
-
-            Product product = productRepository.findById(purchasedProduct.getProductId())
+            Product product = productRepository.findById(purchasedProduct.getId())
                     .orElseThrow(() -> new RuntimeException(
-                            "Product not found with id: " + purchasedProduct.getProductId()));
+                            "Product not found with id: " + purchasedProduct.getId()));
 
-            Inventory inventory = inventoryRepository
-                    .findByStoreIdAndProductId(store.getId(), product.getId());
+            Inventory inventory = inventoryRepository.findByProductIdandStoreId(
+                    product.getId(),
+                    store.getId()
+            );
 
             if (inventory == null) {
                 throw new RuntimeException(
@@ -61,23 +81,21 @@ public class OrderService {
                         " and product id " + product.getId());
             }
 
-            if (inventory.getStockQuantity() < purchasedProduct.getQuantity()) {
+            if (inventory.getStockLevel() < purchasedProduct.getQuantity()) {
                 throw new RuntimeException(
                         "Not enough stock for product id: " + product.getId());
             }
 
-            inventory.setStockQuantity(inventory.getStockQuantity() - purchasedProduct.getQuantity());
+            inventory.setStockLevel(inventory.getStockLevel() - purchasedProduct.getQuantity());
             inventoryRepository.save(inventory);
 
             OrderItem orderItem = new OrderItem();
-            orderItem.setOrderDetails(orderDetails);
+            orderItem.setOrder(orderDetails);
             orderItem.setProduct(product);
             orderItem.setQuantity(purchasedProduct.getQuantity());
             orderItem.setPrice(product.getPrice());
 
             orderItemRepository.save(orderItem);
         }
-
     }
-   
 }

@@ -2,8 +2,8 @@ package com.project.code.Service;
 
 import com.project.code.Model.Inventory;
 import com.project.code.Model.Product;
-import com.project.code.Repository.InventoryRepository;
-import com.project.code.Repository.ProductRepository;
+import com.project.code.Repo.InventoryRepository;
+import com.project.code.Repo.ProductRepository;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -19,16 +19,25 @@ public class ServiceClass {
     }
 
     public boolean validateInventory(Inventory inventory) {
-        boolean exists = inventoryRepository.existsByProductIdAndStoreId(
+        if (inventory == null || inventory.getProduct() == null || inventory.getStore() == null) {
+            return false;
+        }
+
+        Inventory existingInventory = inventoryRepository.findByProductIdandStoreId(
                 inventory.getProduct().getId(),
                 inventory.getStore().getId()
         );
-        return !exists;
+
+        return existingInventory == null;
     }
 
     public boolean validateProduct(Product product) {
-        boolean exists = productRepository.existsByName(product.getName());
-        return !exists;
+        if (product == null || product.getName() == null) {
+            return false;
+        }
+
+        Product existingProduct = productRepository.findByName(product.getName());
+        return existingProduct == null;
     }
 
     public boolean validateProductId(long id) {
@@ -36,7 +45,11 @@ public class ServiceClass {
     }
 
     public Inventory getInventoryId(Inventory inventory) {
-        return inventoryRepository.findByProductIdAndStoreId(
+        if (inventory == null || inventory.getProduct() == null || inventory.getStore() == null) {
+            return null;
+        }
+
+        return inventoryRepository.findByProductIdandStoreId(
                 inventory.getProduct().getId(),
                 inventory.getStore().getId()
         );
